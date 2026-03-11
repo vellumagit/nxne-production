@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NXNE 2026 — Production Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── NXNE Brand: black canvas, cream text, red accent ── */
+:root {
+  --black:#0a0a0a; --black2:#141414; --black3:#1e1e1e;
+  --cream:#f0ebe0; --cream2:#d8d0be; --cream3:#a89e8c;
+  --border:rgba(240,235,224,.1); --border2:rgba(240,235,224,.18);
+  --red:#e8372a; --red-bg:rgba(232,55,42,.12); --red-mid:rgba(232,55,42,.3);
+  --amber:#e8a020; --amber-bg:rgba(232,160,32,.1); --amber-mid:rgba(232,160,32,.3);
+  --green:#3aaa6e; --green-bg:rgba(58,170,110,.1); --green-mid:rgba(58,170,110,.3);
+  --blue:#4a9eff; --blue-bg:rgba(74,158,255,.1); --blue-mid:rgba(74,158,255,.3);
+  --r:6px;
+  --sh:0 1px 0 rgba(240,235,224,.06),0 4px 24px rgba(0,0,0,.4);
+  --shm:0 2px 0 rgba(240,235,224,.08),0 12px 40px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--black);color:var(--cream);font-family:'Archivo',sans-serif;font-weight:400;min-height:100vh;-webkit-font-smoothing:antialiased}
+/* ── HEADER ── */
+.hdr{background:var(--black);border-bottom:1px solid var(--border2);padding:0 36px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.hdr-l{display:flex;align-items:center;gap:20px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--cream);line-height:1}
+.logo em{font-style:normal;color:var(--red)}
+.hpill{background:rgba(240,235,224,.08);border:1px solid var(--border2);border-radius:3px;padding:3px 10px;font-size:10px;font-weight:600;color:var(--cream3);letter-spacing:1.5px;text-transform:uppercase}
+.hdr-r{display:flex;align-items:center;gap:14px}
+.cdinline{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--cream3)}
+.cdinline strong{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--cream);letter-spacing:1px;line-height:1}
+.cdinline span{color:var(--cream3);font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(58,170,110,.4);animation:pring 2s infinite}
+@keyframes pring{0%{box-shadow:0 0 0 0 rgba(58,170,110,.4)}70%{box-shadow:0 0 0 6px rgba(58,170,110,0)}100%{box-shadow:0 0 0 0 rgba(58,170,110,0)}}
+/* ── WEBHOOK BANNER ── */
+.wbanner{background:var(--black2);border-bottom:1px solid var(--border);padding:10px 36px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.wb-l{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--cream3)}
+.wb-l strong{color:var(--cream);font-weight:500}
+.wb-icon{font-size:14px;flex-shrink:0}
+.wb-ins{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wb-inp{font-family:'Archivo',sans-serif;font-size:11px;padding:6px 12px;background:rgba(240,235,224,.05);border:1px solid var(--border2);border-radius:3px;color:var(--cream);width:300px;outline:none;transition:border-color .2s}
+.wb-inp::placeholder{color:var(--cream3)}
+.wb-inp:focus{border-color:rgba(240,235,224,.35)}
+.wb-save{font-family:'Archivo',sans-serif;font-size:10px;font-weight:600;padding:6px 14px;background:var(--cream);color:var(--black);border:none;border-radius:3px;cursor:pointer;transition:opacity .2s;white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
+.wb-save:hover{opacity:.85}
+.wbst{font-size:10px;padding:3px 10px;border-radius:3px;background:rgba(240,235,224,.06);color:var(--cream3);white-space:nowrap;letter-spacing:.5px;text-transform:uppercase}
+.wbst.on{background:var(--green-bg);color:var(--green);border:1px solid var(--green-mid)}
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 108px)}
+/* ── SIDEBAR ── */
+.sb{background:var(--black2);border-right:1px solid var(--border);padding:20px 16px;position:sticky;top:108px;height:calc(100vh - 108px);overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.sb::-webkit-scrollbar{width:2px}
+.sb::-webkit-scrollbar-thumb{background:var(--border2)}
+.sbs{background:var(--black3);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .2s}
+.sbs:hover{border-color:var(--border2)}
+.sbl{font-size:8px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--cream3);margin-bottom:12px}
+.sb-big{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;color:var(--cream);margin-bottom:2px;letter-spacing:1px}
+.sb-sub{font-size:10px;color:var(--cream3);margin-bottom:12px;letter-spacing:.3px}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.mini{background:rgba(240,235,224,.04);border:1px solid var(--border);border-radius:4px;padding:8px;text-align:center}
+.mini .n{font-family:'Bebas Neue',sans-serif;font-size:22px;line-height:1;margin-bottom:2px;letter-spacing:.5px}
+.mini .n.g{color:var(--green)}.mini .n.a{color:var(--amber)}.mini .n.r{color:var(--red)}
+.tbar{height:2px;background:rgba(240,235,224,.08);border-radius:1px;overflow:hidden;margin-top:10px}
+.tfill{height:100%;border-radius:1px}
+.tmeta{display:flex;justify-content:space-between;font-size:9px;color:var(--cream3);margin-top:4px;letter-spacing:.3px}
+.vchips{display:flex;flex-direction:column;gap:3px}
+.vchip{display:flex;align-items:center;padding:5px 8px;background:rgba(240,235,224,.03);border-radius:4px;border:1px solid var(--border);font-size:10px;transition:border-color .15s;gap:7px}
+.vchip:hover{border-color:var(--border2)}
+.vdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.vcn{flex:1;color:var(--cream2)}
+.vcs{color:var(--cream3);font-size:9px;font-weight:500}
+/* ── MAIN ── */
+.main{padding:28px 32px;background:var(--black)}
+/* ── TABS ── */
+.tabs{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--border);width:100%}
+.tab{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--cream3);background:transparent;transition:all .18s;margin-bottom:-1px}
+.tab:hover{color:var(--cream)}
+.tab.active{color:var(--cream);border-bottom-color:var(--red)}
+/* ── PAGE HEADER ── */
+.phd{margin-bottom:28px}
+.ptitle{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--cream);margin-bottom:4px;letter-spacing:2px;line-height:1}
+.ptitle em{font-style:normal;color:var(--red)}
+.psub{font-size:11px;color:var(--cream3);letter-spacing:.5px}
+/* ── AI CARD ── */
+.aic{background:var(--black2);border:1px solid var(--border2);border-radius:var(--r);padding:22px 24px;margin-bottom:24px;position:relative;overflow:hidden}
+.aic::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--amber),var(--green))}
+.aic-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.aic-title{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cream);margin-bottom:2px;letter-spacing:1px}
+.aic-sub{font-size:10px;color:var(--cream3);letter-spacing:.5px}
+.ai-body{font-size:13px;line-height:1.8;color:var(--cream2);min-height:48px}
+.ai-body.ph{color:var(--cream3);font-style:italic;font-size:12px}
+.aic-foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn-p{font-family:'Archivo',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:9px 20px;background:var(--cream);color:var(--black);border:none;border-radius:3px;cursor:pointer;transition:opacity .15s,transform .12s;white-space:nowrap}
+.btn-p:hover{opacity:.85;transform:translateY(-1px)}
+.btn-p:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.btn-s{font-family:'Archivo',sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;background:transparent;color:var(--cream3);border:1px solid var(--border2);border-radius:3px;cursor:pointer;transition:all .18s}
+.btn-s:hover{color:var(--cream);border-color:var(--cream3)}
+.ats{font-size:10px;color:var(--cream3);letter-spacing:.3px}
+/* ── WEBHOOK STATUS CHIPS ── */
+.whrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.whc{display:flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(240,235,224,.04);border:1px solid var(--border);border-radius:3px;font-size:9px;color:var(--cream3);letter-spacing:.8px;text-transform:uppercase;transition:all .2s}
+.whc.on{border-color:var(--green-mid);color:var(--green);background:var(--green-bg)}
+.whc.er{border-color:var(--red-mid);color:var(--red);background:var(--red-bg)}
+.whcd{width:5px;height:5px;border-radius:50%;background:var(--border2)}
+.whc.on .whcd{background:var(--green);animation:pring 2s infinite}
+.whc.er .whcd{background:var(--red)}
+/* ── SECTIONS ── */
+.sec{margin-bottom:28px}
+.sech{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.secl{font-size:8px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--cream3);white-space:nowrap}
+.secr{flex:1;height:1px;background:var(--border)}
+/* ── ALERT GRID ── */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:10px}
+.ac{background:var(--black2);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .2s}
+.ac:hover{border-color:var(--border2)}
+.ach{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.act{font-size:10px;font-weight:600;color:var(--cream2);letter-spacing:.5px;text-transform:uppercase}
+/* ── BADGES ── */
+.badge{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:2px}
+.br{background:var(--red-bg);color:var(--red);border:1px solid var(--red-mid)}
+.ba{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-mid)}
+.bg{background:var(--green-bg);color:var(--green);border:1px solid var(--green-mid)}
+.bk{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-mid)}
+.bm{background:rgba(240,235,224,.06);color:var(--cream3);border:1px solid var(--border)}
+/* ── TASK LIST ── */
+.tlist{display:flex;flex-direction:column;gap:5px}
+.task{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:4px;border-left:2px solid var(--border);background:rgba(240,235,224,.02);transition:background .15s}
+.task:hover{background:rgba(240,235,224,.04)}
+.task.urg{border-left-color:var(--red);background:var(--red-bg)}
+.task.sn{border-left-color:var(--amber);background:var(--amber-bg)}
+.task.dn{border-left-color:var(--green);opacity:.45}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--border2);margin-top:4px;flex-shrink:0}
+.task.urg .tdot{background:var(--red)}
+.task.sn .tdot{background:var(--amber)}
+.task.dn .tdot{background:var(--green)}
+.tn{font-size:11px;font-weight:500;color:var(--cream);margin-bottom:3px}
+.tm{display:flex;gap:10px;flex-wrap:wrap;font-size:9px;color:var(--cream3)}
+.tt{color:var(--blue);font-weight:500}
+/* ── STAT TILES ── */
+.sr{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
+.st{background:var(--black2);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center;transition:border-color .2s}
+.st:hover{border-color:var(--border2)}
+.stn{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;color:var(--cream);margin-bottom:6px;letter-spacing:1px}
+.stn.g{color:var(--green)}.stn.a{color:var(--amber)}.stn.r{color:var(--red)}
+.stl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cream3)}
+/* ── TABLE ── */
+.tc{background:var(--black2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.dt{width:100%;border-collapse:collapse;font-size:11px}
+.dt th{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cream3);padding:10px 14px;text-align:left;background:var(--black3);border-bottom:1px solid var(--border)}
+.dt td{padding:10px 14px;border-bottom:1px solid rgba(240,235,224,.05);color:var(--cream2);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:rgba(240,235,224,.03)}
+/* ── PILLS ── */
+.pill{display:inline-block;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:2px}
+.pr{background:var(--red-bg);color:var(--red)}
+.pa{background:var(--amber-bg);color:var(--amber)}
+.pg{background:var(--green-bg);color:var(--green)}
+.pk{background:var(--blue-bg);color:var(--blue)}
+.pm{background:rgba(240,235,224,.06);color:var(--cream3)}
+/* ── DIVERSITY BARS ── */
+.dbars{display:flex;flex-direction:column;gap:14px}
+.dih{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;font-weight:500;color:var(--cream2)}
+.dih span:last-child{color:var(--cream3);font-weight:400}
+.dbar{height:3px;background:rgba(240,235,224,.08);border-radius:2px;overflow:hidden}
+.dfill{height:100%;border-radius:2px;background:var(--cream)}
+/* ── COMPLETED LIST ── */
+.cky{color:var(--green);font-size:14px}
+.ckn{color:var(--border2);font-size:14px}
+.cl{display:flex;flex-direction:column;gap:3px}
+.ci{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--black2);border:1px solid var(--border);border-radius:4px;font-size:11px;transition:border-color .15s}
+.ci:hover{border-color:var(--border2)}
+.cick{width:18px;height:18px;border-radius:50%;background:var(--green-bg);border:1px solid var(--green-mid);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--green);flex-shrink:0}
+.cin{flex:1;font-weight:400;color:var(--cream2)}
+.cid{color:var(--cream3);font-size:10px;white-space:nowrap}
+/* ── UTILITY ── */
+.scroll-x{overflow-x:auto}
+.panel{display:none}
+.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.panel.active>*{animation:fadeUp .25s ease forwards}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{display:inline-block;width:2px;height:13px;background:var(--cream);margin-left:2px;animation:blink 1s infinite;vertical-align:middle}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(240,235,224,.15);border-top-color:var(--cream);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hpill.live-on{background:var(--green-bg);border-color:var(--green-mid);color:var(--green)}
+#live-badge{transition:all .3s}
+.cache-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">NXNE <em>2026</em></div>
+    <div class="hpill" id="live-badge">Production Dashboard</div>
+  </div>
+  <div class="hdr-r">
+    <div class="cdinline">
+      <div class="pdot"></div>
+      <strong id="cd-days">--</strong>
+      <span>days to festival</span>
+    </div>
+  </div>
+</header>
+<div class="wbanner">
+  <div class="wb-l">
+    <div class="wb-icon">🔗</div>
+    <div><strong>Make.com Webhook</strong> — paste your webhook URL to power live AI analysis</div>
+  </div>
+  <div class="wb-ins">
+    <input class="wb-inp" id="webhookUrl" type="text" placeholder="https://hook.eu2.make.com/your-webhook-id" />
+    <button class="wb-save" onclick="saveWebhook()">Save & Test</button>
+    <div class="wbst" id="wbSt">Not connected</div>
+  </div>
+</div>
+<div style="background:#f8f6f2;border-bottom:1px solid var(--border);padding:10px 36px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <span style="font-size:11px;color:var(--cream3);font-weight:500">📊 Live data URL:</span>
+  <input id="cacheUrl" type="text" style="font-family:'Archivo',sans-serif;font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--cream);background:var(--black);width:460px;outline:none" placeholder="Paste your DASHBOARD_CACHE published JSON URL here" />
+  <button onclick="saveCacheUrl()" style="font-family:'Archivo',sans-serif;font-size:11px;font-weight:600;padding:6px 14px;background:var(--cream);color:#fff;border:none;border-radius:6px;cursor:pointer">Start Live Updates</button>
+  <span id="cacheUrlStatus" style="font-size:11px;color:var(--cream3)">Not connected</span>
+</div>
+<div class="layout">
+  <aside class="sb">
+    <div class="sbs">
+      <div class="sbl">Artists</div>
+      <div class="sb-big" data-live="total_offers">215</div>
+      <div class="sb-sub">offers sent this cycle</div>
+      <div class="minis">
+        <div class="mini"><div class="n g" data-live="confirmed_artists">185</div><div class="l">Confirmed</div></div>
+        <div class="mini"><div class="n a" data-live="pending_artists">9</div><div class="l">Pending</div></div>
+        <div class="mini"><div class="n r" data-live="declined_artists">21</div><div class="l">Declined</div></div>
+      </div>
+      <div class="tbar" style="margin-top:12px"><div class="tfill" id="bar-acceptance" style="width:86%;background:var(--green)"></div></div>
+      <div class="tmeta"><span>Acceptance rate</span><span>86%</span></div>
+    </div>
+    <div class="sbs">
+      <div class="sbl">Critical Path</div>
+      <div class="minis">
+        <div class="mini"><div class="n g" data-live="completed_tasks">9</div><div class="l">Done</div></div>
+        <div class="mini"><div class="n r" data-live="overdue_tasks">3</div><div class="l">Overdue</div></div>
+        <div class="mini"><div class="n" data-live="remaining_tasks">67</div><div class="l">Remaining</div></div>
+      </div>
+      <div class="tbar" style="margin-top:10px"><div class="tfill" id="bar-cp" style="width:12%;background:var(--amber)"></div></div>
+      <div class="tmeta"><span>Complete</span><span>12% of 76</span></div>
+    </div>
+    <div class="sbs">
+      <div class="sbl">Venues — Open Slots</div>
+      <div class="vchips" id="venue-chips-live">
+        <div class="vchip"><div class="vdot" style="background:var(--red)"></div><span class="vcn">Paddock</span><span class="vcs">14/14</span></div>
+        <div class="vchip"><div class="vdot" style="background:var(--red)"></div><span class="vcn">Poetry Jazz Cafe</span><span class="vcs">12/12</span></div>
+        <div class="vchip"><div class="vdot" style="background:var(--amber)"></div><span class="vcn">Cameron House</span><span class="vcs">14/18</span></div>
+        <div class="vchip"><div class="vdot" style="background:var(--amber)"></div><span class="vcn">Drake Underground</span><span class="vcs">8/16</span></div>
+        <div class="vchip"><div class="vdot" style="background:var(--amber)"></div><span class="vcn">Duffy's Tavern</span><span class="vcs">8/12</span></div>
+        <div class="vchip"><div class="vdot" style="background:var(--green)"></div><span class="vcn">Burdock</span><span class="vcs">2/11</span></div>
+      </div>
+    </div>
+    <div class="sbs">
+      <div class="sbl">Stage Managers</div>
+      <div class="sb-big" style="font-size:36px" data-live="sm_total">20</div>
+      <div class="sb-sub">assigned · 0% onboarded</div>
+      <div class="minis">
+        <div class="mini"><div class="n r" data-live="contracts_signed">0</div><div class="l">Contracts</div></div>
+        <div class="mini"><div class="n r" data-live="in_volgistics">0</div><div class="l">Volgistics</div></div>
+        <div class="mini"><div class="n r" data-live="emails_collected">0</div><div class="l">Emails</div></div>
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview',this)">Overview</button>
+      <button class="tab" onclick="switchTab('critical-path',this)">Critical Path</button>
+      <button class="tab" onclick="switchTab('artists',this)">Artists</button>
+      <button class="tab" onclick="switchTab('venues',this)">Venues</button>
+      <button class="tab" onclick="switchTab('stage-managers',this)">Stage Managers</button>
+    </div>
+    <!-- OVERVIEW -->
+    <div class="panel active" id="tab-overview">
+      <div class="phd">
+        <div class="ptitle">PRODUCTION <em>OVERVIEW</em></div>
+        <div class="psub">March 3, 2026 · 99 days to festival · Here's where things stand today</div>
+      </div>
+      <div class="whrow">
+        <div class="whc" id="wh-overview"><div class="whcd"></div>Overview analysis</div>
+        <div class="whc" id="wh-cp"><div class="whcd"></div>Critical path</div>
+        <div class="whc" id="wh-artists"><div class="whcd"></div>Artist roster</div>
+        <div class="whc" id="wh-venues"><div class="whcd"></div>Venues</div>
+        <div class="whc" id="wh-sm"><div class="whcd"></div>Stage managers</div>
+      </div>
+      <div class="aic">
+        <div class="aic-head">
+          <div>
+            <div class="aic-title">AI Festival Intelligence</div>
+            <div class="aic-sub">Full cross-sheet analysis · Powered by Claude via Make.com webhook</div>
+          </div>
+          <button class="btn-p" id="btn-overview" onclick="triggerAnalysis('overview')">Run Analysis</button>
+        </div>
+        <div class="ai-body ph" id="out-overview">Connect your Make.com webhook above, then click Run Analysis for an AI-powered briefing across all your festival data.</div>
+        <div class="aic-foot">
+          <div class="ats" id="ts-overview">Not yet run</div>
+          <button class="btn-s" onclick="copyOut('out-overview')">Copy</button>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">Needs Attention</span><div class="secr"></div><span class="badge br">3 Overdue</span></div>
+        <div class="agrid">
+          <div class="ac">
+            <div class="ach"><div class="act">Overdue Tasks</div><div class="badge br">Overdue</div></div>
+            <div class="tlist">
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">Update Volunteer Recruitment Resources</div><div class="tm"><span>Jan 12</span><span class="tt">Volunteers</span></div></div></div>
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">Distribute Resources to VAACT Contacts</div><div class="tm"><span>Jan 23</span><span class="tt">Volunteers</span></div></div></div>
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">Post-Festival Data Processing 2025</div><div class="tm"><span>Feb 13</span><span class="tt">Volunteers</span></div></div></div>
+            </div>
+          </div>
+          <div class="ac">
+            <div class="ach"><div class="act">Coming Up — 30 Days</div><div class="badge ba">Soon</div></div>
+            <div class="tlist">
+              <div class="task sn"><div class="tdot"></div><div><div class="tn">Volunteer Coordinator Start Date</div><div class="tm"><span>Mar 15</span><span class="tt">Volunteers</span></div></div></div>
+              <div class="task sn"><div class="tdot"></div><div><div class="tn">Tech Production Coordinator Start</div><div class="tm"><span>Mar 15</span><span class="tt">Production</span></div></div></div>
+              <div class="task sn"><div class="tdot"></div><div><div class="tn">Programming Lock Date</div><div class="tm"><span>Mar 31</span><span class="tt">Production</span></div></div></div>
+            </div>
+          </div>
+          <div class="ac">
+            <div class="ach"><div class="act">Venue Gaps</div><div class="badge br">Action Needed</div></div>
+            <div class="tlist">
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">The Garrison — Outreach Needed</div><div class="tm"><span>14 slots unfilled</span><span class="tt">Venue</span></div></div></div>
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">Sankofa Square — Outreach Needed</div><div class="tm"><span>Unconfirmed</span><span class="tt">Venue</span></div></div></div>
+              <div class="task sn"><div class="tdot"></div><div><div class="tn">Paddock — 14/14 slots empty</div><div class="tm"><span>Lock in 28 days</span><span class="tt">Venue</span></div></div></div>
+            </div>
+          </div>
+          <div class="ac">
+            <div class="ach"><div class="act">SM Onboarding</div><div class="badge br">Critical</div></div>
+            <div class="tlist">
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">0 / 20 contracts signed</div><div class="tm"><span>All outstanding</span><span class="tt">Volunteers</span></div></div></div>
+              <div class="task urg"><div class="tdot"></div><div><div class="tn">0 / 20 added to Volgistics</div><div class="tm"><span>Enrollment needed</span><span class="tt">Volunteers</span></div></div></div>
+              <div class="task sn"><div class="tdot"></div><div><div class="tn">Emails missing for all SMs</div><div class="tm"><span>Can't communicate</span><span class="tt">Volunteers</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">Recently Completed</span><div class="secr"></div><span class="badge bg">7 Done</span></div>
+        <div class="cl">
+          <div class="ci"><div class="cick">✓</div><span class="cin">First 100 Artist Announcement</span><span class="cid">Mar 3, 2026</span></div>
+          <div class="ci"><div class="cick">✓</div><span class="cin">Email Returners About Volunteer Recruitment</span><span class="cid">Feb 17, 2026</span></div>
+          <div class="ci"><div class="cick">✓</div><span class="cin">Initial Email to Returning Stage Managers</span><span class="cid">Jan 13, 2026</span></div>
+          <div class="ci"><div class="cick">✓</div><span class="cin">Open New Volunteer Recruitment</span><span class="cid">Jan 13, 2026</span></div>
+          <div class="ci"><div class="cick">✓</div><span class="cin">Create Volunteer Recruitment Form</span><span class="cid">Jan 13, 2026</span></div>
+          <div class="ci"><div class="cick">✓</div><span class="cin">Create Workflow Guide for Volunteer Dept</span><span class="cid">Jan 13, 2026</span></div>
+          <div class="ci"><div class="cick">✓</div><span class="cin">Update All Venue Production Info Sheets</span><span class="cid">Jan 19, 2026</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- CRITICAL PATH -->
+    <div class="panel" id="tab-critical-path">
+      <div class="phd"><div class="ptitle">Critical <em>Path</em></div><div class="psub">2026_PVL_CRITICAL_PATH.xlsx · 76 tasks · 9 complete · 3 overdue</div></div>
+      <div class="aic">
+        <div class="aic-head">
+          <div><div class="aic-title">Critical Path Risk Assessment</div><div class="aic-sub">AI identifies bottlenecks and downstream risks · Via Make.com webhook</div></div>
+          <button class="btn-p" id="btn-cp" onclick="triggerAnalysis('cp')">Analyze Risks</button>
+        </div>
+        <div class="ai-body ph" id="out-cp">Click to get an AI risk assessment of your critical path and upcoming deadlines.</div>
+        <div class="aic-foot"><div class="ats" id="ts-cp">Not yet run</div><button class="btn-s" onclick="copyOut('out-cp')">Copy</button></div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">All Tasks by Deadline</span><div class="secr"></div></div>
+        <div class="tc scroll-x"><table class="dt"><thead><tr><th>Task</th><th>Deadline</th><th>Owner</th><th>Type</th><th>Status</th></tr></thead><tbody id="cp-body"></tbody></table></div>
+      </div>
+    </div>
+    <!-- ARTISTS -->
+    <div class="panel" id="tab-artists">
+      <div class="phd"><div class="ptitle">Artist <em>Roster</em></div><div class="psub">NXNE_2026_Artist_Offer_List.xlsx · 215 offers · 86% acceptance</div></div>
+      <div class="aic">
+        <div class="aic-head">
+          <div><div class="aic-title">Artist Roster Analysis</div><div class="aic-sub">Programming gaps, diversity metrics, pending items · Via Make.com webhook</div></div>
+          <button class="btn-p" id="btn-artists" onclick="triggerAnalysis('artists')">Analyze Roster</button>
+        </div>
+        <div class="ai-body ph" id="out-artists">Click to analyze your artist offer list — acceptance rates, diversity metrics, and programming gaps.</div>
+        <div class="aic-foot"><div class="ats" id="ts-artists">Not yet run</div><button class="btn-s" onclick="copyOut('out-artists')">Copy</button></div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">Offer Summary</span><div class="secr"></div></div>
+        <div class="sr">
+          <div class="st"><div class="stn" data-live="total_offers">215</div><div class="stl">Total Offers</div></div>
+          <div class="st"><div class="stn g" data-live="confirmed_artists">185</div><div class="stl">Accepted</div></div>
+          <div class="st"><div class="stn a" data-live="pending_artists">9</div><div class="stl">Pending</div></div>
+          <div class="st"><div class="stn r" data-live="declined_artists">21</div><div class="stl">Declined</div></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">Upcoming Announcements</span><div class="secr"></div></div>
+        <div class="tlist" style="max-width:540px">
+          <div class="task dn"><div class="tdot"></div><div><div class="tn">First 100 Artists — Announce + Social Push</div><div class="tm"><span>Mar 3 · Today ✓</span><span class="tt">Announcement</span></div></div></div>
+          <div class="task sn"><div class="tdot"></div><div><div class="tn">2nd 100 Artists Announcement</div><div class="tm"><span>Mar 17, 2026</span><span class="tt">Announcement</span></div></div></div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">Equity & Diversity</span><div class="secr"></div></div>
+        <div class="ac" style="max-width:460px">
+          <div class="dbars">
+            <div><div class="dih"><span>POC</span><span>206 artists</span></div><div class="dbar"><div class="dfill" style="width:96%"></div></div></div>
+            <div><div class="dih"><span>LGBTQ2S+</span><span>131 artists</span></div><div class="dbar"><div class="dfill" style="width:61%"></div></div></div>
+            <div><div class="dih"><span>Disability</span><span>80 artists</span></div><div class="dbar"><div class="dfill" style="width:37%"></div></div></div>
+            <div><div class="dih"><span>Indigenous</span><span>18 artists</span></div><div class="dbar"><div class="dfill" style="width:8%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- VENUES -->
+    <div class="panel" id="tab-venues">
+      <div class="phd"><div class="ptitle">Venue <em>Schedule</em></div><div class="psub">VENUE_SCHEDULE_2026.xlsx · 25 venues · Programming lock March 31</div></div>
+      <div class="aic">
+        <div class="aic-head">
+          <div><div class="aic-title">Venue Programming Analysis</div><div class="aic-sub">Slot fill rates, risks, and recommendations · Via Make.com webhook</div></div>
+          <button class="btn-p" id="btn-venues" onclick="triggerAnalysis('venues')">Analyze Venues</button>
+        </div>
+        <div class="ai-body ph" id="out-venues">Click to analyze venue statuses, slot fill rates, and get recommendations before programming lock.</div>
+        <div class="aic-foot"><div class="ats" id="ts-venues">Not yet run</div><button class="btn-s" onclick="copyOut('out-venues')">Copy</button></div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">All Venues</span><div class="secr"></div></div>
+        <div class="tc scroll-x"><table class="dt"><thead><tr><th>Venue</th><th>Status</th><th>Nights</th><th>Total Slots</th><th>Open Slots</th><th>Fill Rate</th></tr></thead><tbody id="venue-body"></tbody></table></div>
+      </div>
+    </div>
+    <!-- STAGE MANAGERS -->
+    <div class="panel" id="tab-stage-managers">
+      <div class="phd"><div class="ptitle">Stage <em>Managers</em></div><div class="psub">Stage_Manager_Milestone_Tracking_2026.xlsx · 20 assigned · 0% onboarded</div></div>
+      <div class="aic">
+        <div class="aic-head">
+          <div><div class="aic-title">Stage Manager Onboarding Brief</div><div class="aic-sub">Status, risks, and next actions · Via Make.com webhook</div></div>
+          <button class="btn-p" id="btn-sm" onclick="triggerAnalysis('sm')">Analyze SM Status</button>
+        </div>
+        <div class="ai-body ph" id="out-sm">Click to get an AI overview of stage manager onboarding and the most urgent next actions.</div>
+        <div class="aic-foot"><div class="ats" id="ts-sm">Not yet run</div><button class="btn-s" onclick="copyOut('out-sm')">Copy</button></div>
+      </div>
+      <div class="sec">
+        <div class="sech"><span class="secl">Milestone Tracker</span><div class="secr"></div></div>
+        <div class="tc scroll-x"><table class="dt"><thead><tr><th>Name</th><th>Venue</th><th>Acceptance</th><th>Volgistics</th><th>Contract</th><th>Headshot</th><th>Group Chat</th><th>Training 1</th><th>Training 2</th></tr></thead><tbody id="sm-body"></tbody></table></div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+const CP_DATA=[
+  {task:"Update Volunteer Recruitment Resources",dl:"2026-01-12",by:"Production Manager",type:"VOLUNTEERS",done:false},
+  {task:"Distribute Volunteer Resources to VAACT",dl:"2026-01-23",by:"Production Manager",type:"VOLUNTEERS",done:false},
+  {task:"Post-Festival Data Processing 2025",dl:"2026-02-13",by:"Production Manager",type:"VOLUNTEERS",done:false},
+  {task:"Volunteer Coordinator Start Date",dl:"2026-03-15",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Technical Production Coordinator Start",dl:"2026-03-15",by:"Tech Prod. Coordinator",type:"PRODUCTION",done:false},
+  {task:"Programming Lock Date",dl:"2026-03-31",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"Follow Up with Remaining Stage Managers",dl:"2026-04-02",by:"Production Manager",type:"VOLUNTEERS",done:false},
+  {task:"Distribute NXNE Backline Request Form",dl:"2026-04-03",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"Stage Manager Interview Period",dl:"2026-04-15",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Deactivate Non-Returning Volunteers",dl:"2026-04-15",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Update & Review Volunteer Handbook",dl:"2026-04-15",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Email Returners to Sign Up for Venue Roles",dl:"2026-04-16",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Review Applications — Stagehands + Ticket Handlers",dl:"2026-04-18",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Final Non-Venue Volunteer Schedule",dl:"2026-04-20",by:"Production Manager",type:"VOLUNTEERS",done:false},
+  {task:"Finalize First Draft Driver Schedule",dl:"2026-04-21",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"Finalize SM List & Send Acceptances",dl:"2026-04-22",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Assign Stage Managers to Venues",dl:"2026-04-24",by:"Volunteer Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Email Driver Schedule to Venues",dl:"2026-04-24",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"PVL Team Orientation Deck Created",dl:"2026-04-27",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"Main Backline Order to L&M",dl:"2026-05-01",by:"Tech Prod. Coordinator",type:"PRODUCTION",done:false},
+  {task:"Staff Start Dates (Interns, Box Office)",dl:"2026-05-04",by:"ALL TEAM",type:"PRODUCTION",done:false},
+  {task:"PVL Team Orientation",dl:"2026-05-04",by:"ALL TEAM",type:"PRODUCTION",done:false},
+  {task:"Input Venue Schedules into Volgistics",dl:"2026-05-06",by:"Volunteers Intern",type:"VOLUNTEERS",done:false},
+  {task:"Proof All Venue Schedules",dl:"2026-05-07",by:"Asst. Vol. Coordinator",type:"VOLUNTEERS",done:false},
+  {task:"Shift Launch @ 5:30pm",dl:"2026-05-08",by:"VOL DEPT.",type:"VOLUNTEERS",done:false},
+  {task:"Share Venue Packages with All Venues",dl:"2026-05-18",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"Artist Advancing Complete",dl:"2026-05-25",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"All Accreditation Created (Digital)",dl:"2026-05-25",by:"Box Office Coordinator",type:"TICKETING",done:false},
+  {task:"NEW SM Training Part 1",dl:"2026-06-01",by:"ALL TEAM",type:"VOLUNTEERS",done:false},
+  {task:"NEW SM Training Part 2",dl:"2026-06-02",by:"ALL TEAM",type:"VOLUNTEERS",done:false},
+  {task:"Temp Staff Training Day",dl:"2026-06-03",by:"Production Manager",type:"PRODUCTION",done:false},
+  {task:"ALL NXNE HQ + Festival Training",dl:"2026-06-04",by:"ALL TEAM",type:"PRODUCTION",done:false},
+  {task:"Volunteer Orientation",dl:"2026-06-08",by:"VOL DEPT.",type:"VOLUNTEERS",done:false},
+  {task:"Update All Venue Production Info Sheets",dl:"2025-11-28",by:"Production Manager",type:"PRODUCTION",done:true},
+  {task:"Create Volunteer Workflow/Guide",dl:"2025-11-28",by:"Production Manager",type:"VOLUNTEERS",done:true},
+  {task:"Create Volunteer Recruitment Form",dl:"2026-01-12",by:"Production Manager",type:"VOLUNTEERS",done:true},
+  {task:"Open New Volunteer Recruitment",dl:"2026-01-19",by:"Production Manager",type:"VOLUNTEERS",done:true},
+  {task:"Email Returners About New Recruitment",dl:"2026-01-19",by:"Production Manager",type:"VOLUNTEERS",done:true},
+  {task:"Initial Email to Returning Stage Managers",dl:"2026-02-13",by:"Production Manager",type:"VOLUNTEERS",done:true},
+];
+const VENUES=[
+  {name:"Baby G",status:"Confirmed",nights:3,total:12,open:4},
+  {name:"Bovine Sex Club",status:"Confirmed",nights:4,total:24,open:11},
+  {name:"Burdock",status:"Confirmed",nights:3,total:11,open:2},
+  {name:"Cafe Pamenar",status:"Confirmed",nights:3,total:9,open:7},
+  {name:"Cameron House",status:"Confirmed",nights:4,total:18,open:14},
+  {name:"Cassette (Gladstone)",status:"Confirmed",nights:3,total:13,open:4},
+  {name:"Collective Arts Taproom",status:"Confirmed",nights:3,total:13,open:5},
+  {name:"Dina's Tavern",status:"Confirmed",nights:3,total:8,open:4},
+  {name:"Drake Underground",status:"Confirmed",nights:4,total:16,open:8},
+  {name:"Duffy's Tavern",status:"Confirmed",nights:3,total:12,open:8},
+  {name:"El Mocambo (upstairs)",status:"Confirmed",nights:null,total:null,open:null},
+  {name:"El Mocambo (downstairs)",status:"Confirmed",nights:null,total:null,open:null},
+  {name:"Future (Infinity Room)",status:"Confirmed",nights:3,total:11,open:5},
+  {name:"The Garrison",status:"Outreach Needed",nights:4,total:14,open:14},
+  {name:"Handlebar",status:"Confirmed",nights:4,total:14,open:7},
+  {name:"Horseshoe Tavern",status:"Confirmed",nights:4,total:18,open:null},
+  {name:"Jean Darlene Piano Room",status:"Confirmed",nights:2,total:7,open:7},
+  {name:"Lee's Palace",status:"Confirmed",nights:null,total:null,open:null},
+  {name:"Paddock",status:"Confirmed",nights:4,total:14,open:14},
+  {name:"Painted Lady",status:"Confirmed",nights:3,total:11,open:2},
+  {name:"The Pilot",status:"Confirmed",nights:3,total:14,open:3},
+  {name:"Poetry Jazz Cafe",status:"Confirmed",nights:3,total:12,open:12},
+  {name:"Supermarket",status:"Confirmed",nights:4,total:14,open:7},
+  {name:"Trinity Common",status:"Confirmed",nights:3,total:12,open:6},
+  {name:"Sankofa Square",status:"Outreach Needed",nights:null,total:null,open:null},
+];
+const SMS=[
+  {name:"Howard Rosenbloom",venue:"Burdock"},
+  {name:"Matt Samuels",venue:"Bovine Sex Club"},
+  {name:"Connor Schaufler",venue:"El Mocambo Downstairs"},
+  {name:"Skyy Marriott",venue:"Horseshoe Tavern"},
+  {name:"Betty Gunawan",venue:"Baby G (poss. switch)"},
+  {name:"Mollify Moyo",venue:"Duffy's Tavern"},
+  {name:"Christian Mueller",venue:"Cassette (Gladstone)"},
+  {name:"Marla Minshall",venue:"Paddock"},
+  {name:"Natalia Perri",venue:"Collective Arts"},
+  {name:"Latika Hinds",venue:"Rivoli / Jean Darlene"},
+  {name:"Andrew Lau",venue:"Handlebar / Poetry / JDL"},
+  {name:"Devon Anderson",venue:"Dina's Tavern + Sankofa"},
+  {name:"Leo Zhu",venue:"Future Infinity Room"},
+  {name:"Taj Graf",venue:"Horseshoe (TBC)"},
+  {name:"Kevin Babcock",venue:"The Garrison (TBC)"},
+  {name:"Tricia Douglas",venue:"Supermarket"},
+  {name:"Bini Shah",venue:"Cafe Pamenar"},
+  {name:"Hal Carim",venue:"The Pilot"},
+  {name:"Nancy Agbaje",venue:"The Painted Lady"},
+];
+const PROMPTS={
+  overview:`You are a senior music festival production expert for NXNE 2026 (June 10-14, Toronto). Today is March 3, 2026 — 99 days out. Write a warm, sharp 4-5 sentence executive briefing covering: top 3 risks, what is going well, and the single most important action for this week. Data: 215 artists offered, 185 accepted (86%), 9 pending. 3 critical path tasks overdue. Vol Coordinator and Tech Prod Coordinator start March 15. Programming lock March 31. 20 stage managers assigned, 0% onboarding complete. The Garrison and Sankofa Square need outreach. Paddock (14/14), Poetry Jazz Cafe (12/12), Cameron House (14/18) largely unfilled. First 100 artist announcement today. Plain text only, no markdown.`,
+  cp:`NXNE 2026 festival, today March 3. Critical path: 9/76 tasks complete. 3 overdue (all Volunteer dept): volunteer resources Jan 12, VAACT distribution Jan 23, 2025 data processing Feb 13. Key milestones: Vol Coordinator March 15, Programming Lock March 31, SM finalization April 22, SM Training June 1. In 3-4 sentences: which department is most exposed, downstream impact, and 2 most urgent actions for next 2 weeks. Plain text only.`,
+  artists:`NXNE 2026, today March 3. Artist roster: 215 offers, 185 accepted (86%), 9 pending, 21 declined. Diversity: 206 POC, 131 LGBTQ2S+, 80 with disability, 18 Indigenous. First 100 announce today, 2nd 100 March 17. In 3-4 sentences: rate roster health, diversity gaps to address with pending artists, one recommendation for March 17 wave. Plain text only.`,
+  venues:`NXNE 2026, today March 3. Programming lock March 31 — 28 days away. 25 venues: 23 confirmed, 2 need outreach. Emptiest: Paddock 14/14, Poetry Jazz Cafe 12/12, Cameron House 14/18, Jean Darlene 7/7. Well-filled: Burdock 2/11, Painted Lady 2/11. In 3-4 sentences: assess the situation, biggest risk given the lock date, how to prioritize next 4 weeks. Plain text only.`,
+  sm:`NXNE 2026, today March 3. 20 stage managers assigned. Onboarding: 0% contracts, 0% Volgistics, all emails missing, 0% group chat, 0 training attended. SM finalization April 22. Training Part 1 June 1. In 3-4 sentences: diagnose honestly, flag what breaks if not addressed, give 3 most urgent onboarding actions this week. Plain text only.`
+};
+let WEBHOOK_URL = '';
+try { WEBHOOK_URL = localStorage.getItem('nxne_webhook') || ''; } catch(e){}
+window.addEventListener('DOMContentLoaded', () => {
+  if(WEBHOOK_URL){ document.getElementById('webhookUrl').value=WEBHOOK_URL; setWbSt('on'); }
+});
+function saveWebhook(){
+  const v=document.getElementById('webhookUrl').value.trim();
+  if(!v)return;
+  WEBHOOK_URL=v;
+  try{localStorage.setItem('nxne_webhook',v);}catch(e){}
+  testWebhook();
+}
+async function testWebhook(){
+  setWbSt('testing');
+  try{
+    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'ping',source:'nxne-dashboard'})});
+    setWbSt('on');
+  }catch(e){ setWbSt('er'); }
+}
+function setWbSt(s){
+  const el=document.getElementById('wbSt');
+  if(s==='on'){el.textContent='✓ Connected';el.className='wbst on';setChips('on');}
+  else if(s==='er'){el.textContent='✗ Error';el.className='wbst';setChips('er');}
+  else{el.textContent='⟳ Testing...';el.className='wbst';}
+}
+function setChips(s){
+  ['wh-overview','wh-cp','wh-artists','wh-venues','wh-sm'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.className='whc '+(s==='on'?'on':s==='er'?'er':'');
+  });
+}
+function getPayload(type){
+  return {
+    overview:{total_artists:215,confirmed:185,pending:9,declined:21,acceptance_rate:0.86,overdue_tasks:3,total_tasks:76,complete_tasks:9,days_to_festival:99,programming_lock_days:28,sm_total:20,sm_onboarded:0},
+    cp:{overdue:CP_DATA.filter(t=>!t.done&&new Date(t.dl)<new Date('2026-03-03')).map(t=>({task:t.task,deadline:t.dl,type:t.type})),upcoming_30d:CP_DATA.filter(t=>{const d=new Date(t.dl)-new Date('2026-03-03');return !t.done&&d>0&&d<=30*86400000;}).map(t=>({task:t.task,deadline:t.dl}))},
+    artists:{total:215,accepted:185,pending:9,declined:21,diversity:{poc:206,lgbtq:131,disability:80,indigenous:18},next_announce:"2026-03-17"},
+    venues:{total_venues:25,confirmed:23,outreach_needed:2,programming_lock:"2026-03-31",emptiest:VENUES.filter(v=>v.open&&v.open===v.total).map(v=>v.name)},
+    sm:{total:20,contracts_signed:0,in_volgistics:0,emails_collected:0,finalization_deadline:"2026-04-22",training_date:"2026-06-01"}
+  }[type]||{};
+}
+async function triggerAnalysis(type){
+  const btnEl=document.getElementById('btn-'+type);
+  const outEl=document.getElementById('out-'+type);
+  const tsEl=document.getElementById('ts-'+type);
+  btnEl.disabled=true;
+  btnEl.innerHTML='<span class="spinner"></span>Analyzing…';
+  outEl.className='ai-body';
+  outEl.innerHTML='<span style="color:var(--cream3);font-style:italic">Sending to Make.com…</span>';
+  if(!WEBHOOK_URL){
+    outEl.innerHTML='<span style="color:var(--cream3);font-style:italic">No webhook set — calling AI directly (works inside Claude.ai)…</span>';
+    await callDirect(type,outEl,tsEl,btnEl);
+    return;
+  }
+  try{
+    const res=await fetch(WEBHOOK_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type,prompt:PROMPTS[type],source:'nxne-dashboard',timestamp:new Date().toISOString(),data:getPayload(type)})
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const ct=res.headers.get('content-type')||'';
+    let result='';
+    if(ct.includes('application/json')){
+      const j=await res.json();
+      result=j.response||j.result||j.output||j.message||JSON.stringify(j);
+    }else{
+      result=await res.text();
+    }
+    if(result&&result.length>10){
+      await streamText(outEl,result);
+    }else{
+      outEl.className='ai-body';
+      outEl.innerHTML='<span style="color:var(--green);font-weight:500">✓ Sent to Make.com</span> — Your scenario received this request. Configure Make to call the Anthropic API and return the response here, or check your Make execution log for the AI output.';
+    }
+    tsEl.textContent='Last run: '+new Date().toLocaleTimeString();
+  }catch(e){
+    outEl.innerHTML='<span style="color:var(--red)">Webhook error: '+e.message+'</span> — Check your Make.com webhook URL and that your scenario is active.';
+  }
+  btnEl.disabled=false;
+  btnEl.textContent='Re-Analyze';
+}
+async function callDirect(type,outEl,tsEl,btnEl){
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:PROMPTS[type]}]})});
+    const d=await r.json();
+    const txt=d.content.map(c=>c.text||'').join('');
+    await streamText(outEl,txt);
+    tsEl.textContent='Last run: '+new Date().toLocaleTimeString();
+  }catch(e){
+    outEl.innerHTML='<span style="color:var(--red)">Could not reach AI. Add a Make.com webhook URL, or open in Claude.ai for direct AI access.</span>';
+  }
+  btnEl.disabled=false;
+  btnEl.textContent='Re-Analyze';
+}
+async function streamText(el,text){
+  el.className='ai-body';el.innerHTML='';
+  const cur=document.createElement('span');cur.className='cursor';el.appendChild(cur);
+  let i=0;
+  return new Promise(res=>{
+    const iv=setInterval(()=>{
+      if(i<text.length){el.insertBefore(document.createTextNode(text[i++]),cur);}
+      else{clearInterval(iv);cur.remove();res();}
+    },8);
+  });
+}
+function copyOut(id){
+  const txt=document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).catch(()=>{});
+}
+function buildCP(){
+  const today=new Date('2026-03-03');
+  const tc={VOLUNTEERS:'pk',PRODUCTION:'pg',TICKETING:'pa',LOGISTICS:'pm'};
+  document.getElementById('cp-body').innerHTML=[...CP_DATA].sort((a,b)=>new Date(a.dl)-new Date(b.dl)).map(t=>{
+    const diff=Math.ceil((new Date(t.dl)-today)/86400000);
+    let sc,st;
+    if(t.done){sc='pg';st='Done';}
+    else if(diff<0){sc='pr';st=Math.abs(diff)+'d overdue';}
+    else if(diff<=30){sc='pa';st=diff+'d away';}
+    else{sc='pm';st=diff+'d away';}
+    return `<tr style="${t.done?'opacity:.45':''}${diff<0&&!t.done?';background:rgba(192,57,43,.025)':''}">
+      <td style="font-weight:500;${t.done?'text-decoration:line-through':''}">${t.task}</td>
+      <td style="white-space:nowrap;font-size:11px;color:var(--cream3)">${t.dl}</td>
+      <td style="font-size:11px;color:var(--cream3);white-space:nowrap">${t.by}</td>
+      <td><span class="pill ${tc[t.type]||'pm'}">${t.type}</span></td>
+      <td><span class="pill ${sc}">${st}</span></td>
+    </tr>`;
+  }).join('');
+}
+function buildVenues(){
+  document.getElementById('venue-body').innerHTML=VENUES.map(v=>{
+    const f=v.total!=null&&v.open!=null?v.total-v.open:null;
+    const r=f!=null?Math.round((f/v.total)*100):null;
+    return `<tr>
+      <td style="font-weight:500">${v.name}</td>
+      <td><span class="pill ${v.status==='Confirmed'?'pg':'pr'}">${v.status}</span></td>
+      <td style="text-align:center;color:var(--cream3)">${v.nights??'—'}</td>
+      <td style="text-align:center">${v.total??'—'}</td>
+      <td style="text-align:center">${v.open??'—'}</td>
+      <td><span class="pill ${r==null?'pm':r>=75?'pg':r>=40?'pa':'pr'}">${r!=null?r+'%':'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+function buildSM(){
+  const n='<span class="ckn">—</span>';
+  document.getElementById('sm-body').innerHTML=SMS.map(sm=>`<tr>
+    <td style="font-weight:500;white-space:nowrap">${sm.name}</td>
+    <td style="font-size:11px;color:var(--cream3)">${sm.venue}</td>
+    ${Array(7).fill(n).join('')}
+  </tr>`).join('');
+}
+function switchTab(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+function tick(){
+  document.getElementById('cd-days').textContent=Math.floor((new Date('2026-06-10')-new Date())/86400000);
+}
+tick(); setInterval(tick,60000);
+buildCP(); buildVenues(); buildSM();
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  LIVE DATA POLLING — reads from Google Sheets cache
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let CACHE_URL = '';
+try { CACHE_URL = localStorage.getItem('nxne_cache_url') || ''; } catch(e){}
+let liveData = null;
+let pollInterval = null;
+function parseGvizJson(raw) {
+  const clean = raw.replace(/^[\s\S]*?google\.visualization\.Query\.setResponse\(/, '').replace(/\);?\s*$/, '');
+  return JSON.parse(clean);
+}
+function gvizToMap(gviz) {
+  const map = {};
+  const rows = gviz.table.rows;
+  rows.forEach(row => {
+    if (!row.c || row.c.length < 2) return;
+    const key = row.c[0] && row.c[0].v;
+    const val = row.c[1] && row.c[1].v;
+    if (key) map[key] = val;
+  });
+  return map;
+}
+async function fetchLiveData() {
+  if (!CACHE_URL) return;
+  try {
+    const res = await fetch(CACHE_URL + '&t=' + Date.now());
+    const raw = await res.text();
+    const gviz = parseGvizJson(raw);
+    const map  = gvizToMap(gviz);
+    liveData = map;
+    applyLiveData(map);
+    showLiveBadge(map.last_updated);
+  } catch(e) {
+    console.warn('Live data fetch failed:', e.message);
+  }
+}
+function applyLiveData(d) {
+  function set(selector, value, suffix) {
+    if (value == null) return;
+    document.querySelectorAll(selector).forEach(el => {
+      const newText = String(value) + (suffix || '');
+      if (el.textContent !== newText) {
+        el.textContent = newText;
+        flash(el);
+      }
+    });
+  }
+  set('[data-live="total_offers"]',      d.total_offers);
+  set('[data-live="confirmed_artists"]', d.confirmed_artists);
+  set('[data-live="pending_artists"]',   d.pending_artists);
+  set('[data-live="declined_artists"]',  d.declined_artists);
+  set('[data-live="acceptance_rate"]',   d.acceptance_rate, '%');
+  set('[data-live="completed_tasks"]',   d.completed_tasks);
+  set('[data-live="overdue_tasks"]',     d.overdue_tasks);
+  set('[data-live="remaining_tasks"]',   (d.total_tasks || 0) - (d.completed_tasks || 0));
+  set('[data-live="completion_pct"]',    d.completion_pct, '%');
+  set('[data-live="sm_total"]',          d.sm_total);
+  set('[data-live="contracts_signed"]',  d.contracts_signed);
+  set('[data-live="in_volgistics"]',     d.in_volgistics);
+  set('[data-live="emails_collected"]',  d.emails_collected);
+  set('[data-live="open_slots"]',        d.open_slots);
+  set('[data-live="total_slots"]',       d.total_slots);
+  set('[data-live="fill_rate_pct"]',     d.fill_rate_pct, '%');
+  set('[data-live="days_to_festival"]',  d.days_to_festival || d.days_festival);
+  const cdEl = document.getElementById('cd-days');
+  if (cdEl && d.days_to_festival) { cdEl.textContent = d.days_to_festival; flash(cdEl); }
+  if (d.acceptance_rate) updateBar('bar-acceptance', d.acceptance_rate);
+  if (d.completion_pct)  updateBar('bar-cp', d.completion_pct);
+  if (d.needs_filling) {
+    try { rebuildVenueChips(JSON.parse(d.needs_filling)); } catch(e) {}
+  }
+}
+function updateBar(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = Math.min(100, pct) + '%';
+}
+function rebuildVenueChips(venues) {
+  const container = document.getElementById('venue-chips-live');
+  if (!container) return;
+  container.innerHTML = venues.map(v => {
+    const pct   = v.total ? Math.round(((v.total - v.open) / v.total) * 100) : 0;
+    const color = pct >= 75 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="vchip"><div class="vdot" style="background:${color}"></div><span class="vcn">${v.name}</span><span class="vcs">${v.open}/${v.total}</span></div>`;
+  }).join('');
+}
+function flash(el) {
+  el.style.transition = 'color 0.15s';
+  el.style.color = 'var(--green)';
+  setTimeout(() => { el.style.color = ''; }, 800);
+}
+function showLiveBadge(timestamp) {
+  const el = document.getElementById('live-badge');
+  if (!el) return;
+  const t = timestamp ? new Date(timestamp) : new Date();
+  el.textContent = 'Live · ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  el.className = 'hpill live-on';
+}
+function startPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  fetchLiveData();
+  pollInterval = setInterval(fetchLiveData, 30000);
+}
+function saveCacheUrl() {
+  const v = document.getElementById('cacheUrl').value.trim();
+  if (!v) return;
+  CACHE_URL = v;
+  try { localStorage.setItem('nxne_cache_url', v); } catch(e){}
+  startPolling();
+  document.getElementById('cacheUrlStatus').textContent = '✓ Polling started';
+  document.getElementById('cacheUrlStatus').style.color = 'var(--green)';
+}
+if (CACHE_URL) startPolling();
+</script>
+</body>
+</html>

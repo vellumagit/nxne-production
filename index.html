@@ -742,10 +742,16 @@ function gvizToMap(gviz) {
 async function fetchLiveData() {
   if (!CACHE_URL) return;
   try {
-    const res = await fetch(CACHE_URL + '&t=' + Date.now());
-    const raw = await res.text();
-    const gviz = parseGvizJson(raw);
-    const map  = gvizToMap(gviz);
+    const res = await fetch(CACHE_URL, {redirect: 'follow'});
+    const text = await res.text();
+    let map;
+    // Handle both Apps Script Web App JSON and gviz format
+    if (text.trim().startsWith('{')) {
+      map = JSON.parse(text);
+    } else {
+      const gviz = parseGvizJson(text);
+      map = gvizToMap(gviz);
+    }
     liveData = map;
     applyLiveData(map);
     showLiveBadge(map.last_updated);

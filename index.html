@@ -541,13 +541,27 @@ const SMS=[
   {name:"Hal Carim",venue:"The Pilot"},
   {name:"Nancy Agbaje",venue:"The Painted Lady"},
 ];
-const PROMPTS={
-  overview:`You are a senior music festival production expert for NXNE 2026 (June 10-14, Toronto). Today is March 3, 2026 — 99 days out. Write a warm, sharp 4-5 sentence executive briefing covering: top 3 risks, what is going well, and the single most important action for this week. Data: 215 artists offered, 185 accepted (86%), 9 pending. 3 critical path tasks overdue. Vol Coordinator and Tech Prod Coordinator start March 15. Programming lock March 31. 20 stage managers assigned, 0% onboarding complete. The Garrison and Sankofa Square need outreach. Paddock (14/14), Poetry Jazz Cafe (12/12), Cameron House (14/18) largely unfilled. First 100 artist announcement today. Plain text only, no markdown.`,
-  cp:`NXNE 2026 festival, today March 3. Critical path: 9/76 tasks complete. 3 overdue (all Volunteer dept): volunteer resources Jan 12, VAACT distribution Jan 23, 2025 data processing Feb 13. Key milestones: Vol Coordinator March 15, Programming Lock March 31, SM finalization April 22, SM Training June 1. In 3-4 sentences: which department is most exposed, downstream impact, and 2 most urgent actions for next 2 weeks. Plain text only.`,
-  artists:`NXNE 2026, today March 3. Artist roster: 215 offers, 185 accepted (86%), 9 pending, 21 declined. Diversity: 206 POC, 131 LGBTQ2S+, 80 with disability, 18 Indigenous. First 100 announce today, 2nd 100 March 17. In 3-4 sentences: rate roster health, diversity gaps to address with pending artists, one recommendation for March 17 wave. Plain text only.`,
-  venues:`NXNE 2026, today March 3. Programming lock March 31 — 28 days away. 25 venues: 23 confirmed, 2 need outreach. Emptiest: Paddock 14/14, Poetry Jazz Cafe 12/12, Cameron House 14/18, Jean Darlene 7/7. Well-filled: Burdock 2/11, Painted Lady 2/11. In 3-4 sentences: assess the situation, biggest risk given the lock date, how to prioritize next 4 weeks. Plain text only.`,
-  sm:`NXNE 2026, today March 3. 20 stage managers assigned. Onboarding: 0% contracts, 0% Volgistics, all emails missing, 0% group chat, 0 training attended. SM finalization April 22. Training Part 1 June 1. In 3-4 sentences: diagnose honestly, flag what breaks if not addressed, give 3 most urgent onboarding actions this week. Plain text only.`
-};
+function getPrompt(type){
+  const d=liveData||{};
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const days=Math.floor((new Date('2026-06-10')-new Date())/86400000);
+  const total=d.total_offers||0, confirmed=d.confirmed_artists||0;
+  const pending=d.pending_artists||0, declined=d.declined_artists||0;
+  const rate=d.acceptance_rate||0;
+  const overdueTasks=d.overdue_tasks||0, totalTasks=d.total_tasks||0, doneTasks=d.completed_tasks||0;
+  const smTotal=d.sm_total||0, contracts=d.contracts_signed||0, volg=d.in_volgistics||0;
+  const totalV=d.total_venues||0, confirmedV=d.confirmed_venues||0;
+  const openSlots=d.open_slots||0, fillRate=d.fill_rate_pct||0;
+  const poc=d.diversity_poc||0, lgbtq=d.diversity_lgbtq||0, dis=d.diversity_disability||0, ind=d.diversity_indigenous||0;
+  const p={
+    overview:`You are a senior music festival production expert for NXNE 2026 (June 10-14, Toronto). Today is ${today} — ${days} days out. Write a warm, sharp 4-5 sentence executive briefing: top 3 risks, what is going well, single most important action this week. Data: ${total} artists offered, ${confirmed} accepted (${rate}%), ${pending} pending. ${overdueTasks} critical path tasks overdue (${doneTasks}/${totalTasks} complete). ${smTotal} stage managers assigned, ${contracts} contracts signed, ${volg} in Volgistics. ${confirmedV}/${totalV} venues confirmed, ${openSlots} slots open (${fillRate}% fill rate). Plain text only, no markdown.`,
+    cp:`NXNE 2026, today ${today} (${days} days out). Critical path: ${doneTasks}/${totalTasks} tasks complete, ${overdueTasks} overdue. In 3-4 sentences: which area is most exposed, downstream impact, 2 most urgent actions for next 2 weeks. Plain text only.`,
+    artists:`NXNE 2026, today ${today}. Artist roster: ${total} offers, ${confirmed} accepted (${rate}%), ${pending} pending, ${declined} declined. Diversity: ${poc} POC, ${lgbtq} LGBTQ2S+, ${dis} disability, ${ind} Indigenous. In 3-4 sentences: rate roster health, diversity gaps to address, one recommendation. Plain text only.`,
+    venues:`NXNE 2026, today ${today} (${days} days to festival). ${confirmedV}/${totalV} venues confirmed, ${openSlots} slots open, ${fillRate}% fill rate. In 3-4 sentences: assess the situation, biggest risk, how to prioritize. Plain text only.`,
+    sm:`NXNE 2026, today ${today}. ${smTotal} stage managers. Contracts: ${contracts}/${smTotal}, Volgistics: ${volg}/${smTotal}, Emails: ${d.emails_collected||0}/${smTotal}, Groupchat: ${d.in_groupchat||0}/${smTotal}, Training 1: ${d.training1_done||0}/${smTotal}, Training 2: ${d.training2_done||0}/${smTotal}. SM finalization April 22, Training June 1. In 3-4 sentences: diagnose honestly, what breaks if not addressed, 3 most urgent actions this week. Plain text only.`
+  };
+  return p[type]||'';
+}
 let WEBHOOK_URL = '';
 try { WEBHOOK_URL = localStorage.getItem('nxne_webhook') || ''; } catch(e){}
 window.addEventListener('DOMContentLoaded', () => {
@@ -585,12 +599,15 @@ function setChips(s){
   });
 }
 function getPayload(type){
+  const d=liveData||{};
+  const days=Math.floor((new Date('2026-06-10')-new Date())/86400000);
+  const parse=k=>{try{return JSON.parse(d[k]||'[]');}catch(e){return[];}};
   return {
-    overview:{total_artists:215,confirmed:185,pending:9,declined:21,acceptance_rate:0.86,overdue_tasks:3,total_tasks:76,complete_tasks:9,days_to_festival:99,programming_lock_days:28,sm_total:20,sm_onboarded:0},
-    cp:{overdue:CP_DATA.filter(t=>!t.done&&new Date(t.dl)<new Date('2026-03-03')).map(t=>({task:t.task,deadline:t.dl,type:t.type})),upcoming_30d:CP_DATA.filter(t=>{const d=new Date(t.dl)-new Date('2026-03-03');return !t.done&&d>0&&d<=30*86400000;}).map(t=>({task:t.task,deadline:t.dl}))},
-    artists:{total:215,accepted:185,pending:9,declined:21,diversity:{poc:206,lgbtq:131,disability:80,indigenous:18},next_announce:"2026-03-17"},
-    venues:{total_venues:25,confirmed:23,outreach_needed:2,programming_lock:"2026-03-31",emptiest:VENUES.filter(v=>v.open&&v.open===v.total).map(v=>v.name)},
-    sm:{total:20,contracts_signed:0,in_volgistics:0,emails_collected:0,finalization_deadline:"2026-04-22",training_date:"2026-06-01"}
+    overview:{days_to_festival:days,total_artists:d.total_offers,confirmed:d.confirmed_artists,pending:d.pending_artists,declined:d.declined_artists,acceptance_rate:d.acceptance_rate,overdue_tasks:d.overdue_tasks,total_tasks:d.total_tasks,completed_tasks:d.completed_tasks,sm_total:d.sm_total,contracts_signed:d.contracts_signed,in_volgistics:d.in_volgistics,total_venues:d.total_venues,confirmed_venues:d.confirmed_venues,open_slots:d.open_slots,fill_rate_pct:d.fill_rate_pct},
+    cp:{total:d.total_tasks,completed:d.completed_tasks,overdue:d.overdue_tasks,overdue_detail:parse('overdue_detail'),upcoming:parse('upcoming_tasks')},
+    artists:{total:d.total_offers,confirmed:d.confirmed_artists,pending:d.pending_artists,declined:d.declined_artists,acceptance_rate:d.acceptance_rate,diversity:{poc:d.diversity_poc,lgbtq:d.diversity_lgbtq,disability:d.diversity_disability,indigenous:d.diversity_indigenous}},
+    venues:{total_venues:d.total_venues,confirmed:d.confirmed_venues,total_slots:d.total_slots,open_slots:d.open_slots,fill_rate_pct:d.fill_rate_pct,needs_filling:parse('needs_filling')},
+    sm:{total:d.sm_total,contracts_signed:d.contracts_signed,in_volgistics:d.in_volgistics,emails_collected:d.emails_collected,in_groupchat:d.in_groupchat,training1_done:d.training1_done,training2_done:d.training2_done}
   }[type]||{};
 }
 async function triggerAnalysis(type){
@@ -610,7 +627,7 @@ async function triggerAnalysis(type){
     const res=await fetch(WEBHOOK_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type,prompt:PROMPTS[type],source:'nxne-dashboard',timestamp:new Date().toISOString(),data:getPayload(type)})
+      body:JSON.stringify({type,prompt:getPrompt(type),source:'nxne-dashboard',timestamp:new Date().toISOString(),data:getPayload(type)})
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     const ct=res.headers.get('content-type')||'';
@@ -636,7 +653,7 @@ async function triggerAnalysis(type){
 }
 async function callDirect(type,outEl,tsEl,btnEl){
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:PROMPTS[type]}]})});
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:getPrompt(type)}]})});
     const d=await r.json();
     const txt=d.content.map(c=>c.text||'').join('');
     await streamText(outEl,txt);
@@ -663,7 +680,7 @@ function copyOut(id){
   navigator.clipboard.writeText(txt).catch(()=>{});
 }
 function buildCP(){
-  const today=new Date('2026-03-03');
+  const today=new Date();
   const tc={VOLUNTEERS:'pk',PRODUCTION:'pg',TICKETING:'pa',LOGISTICS:'pm'};
   document.getElementById('cp-body').innerHTML=[...CP_DATA].sort((a,b)=>new Date(a.dl)-new Date(b.dl)).map(t=>{
     const diff=Math.ceil((new Date(t.dl)-today)/86400000);

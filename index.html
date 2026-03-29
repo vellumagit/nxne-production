@@ -552,6 +552,11 @@ let WEBHOOK_URL = '';
 try { WEBHOOK_URL = localStorage.getItem('nxne_webhook') || ''; } catch(e){}
 window.addEventListener('DOMContentLoaded', () => {
   if(WEBHOOK_URL){ document.getElementById('webhookUrl').value=WEBHOOK_URL; setWbSt('on'); }
+  if(CACHE_URL){ 
+    document.getElementById('cacheUrl').value=CACHE_URL;
+    document.getElementById('cacheUrlStatus').textContent = '✓ Polling started';
+    document.getElementById('cacheUrlStatus').style.color = 'var(--green)';
+  }
 });
 function saveWebhook(){
   const v=document.getElementById('webhookUrl').value.trim();

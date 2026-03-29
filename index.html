@@ -974,7 +974,7 @@ async function sendChat() {
       const res = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ type:'chat', prompt, source:'nxne-dashboard', timestamp:new Date().toISOString() })
+        body: JSON.stringify({ type:'overview', prompt, source:'nxne-dashboard', timestamp:new Date().toISOString() })
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const ct = res.headers.get('content-type') || '';

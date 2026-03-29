@@ -781,10 +781,15 @@ function buildSM(){
 function switchTab(name,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
+  const panel=document.getElementById('tab-'+name);
+  panel.classList.add('active');
   btn.classList.add('active');
   const chat=document.getElementById('chat-panel');
-  if(chat) document.getElementById('tab-'+name).appendChild(chat);
+  if(chat){
+    const aic=panel.querySelector('.aic');
+    if(aic) aic.insertAdjacentElement('afterend',chat);
+    else panel.appendChild(chat);
+  }
 }
 function toggleChat(){
   document.getElementById('chat-panel').classList.toggle('open');
@@ -917,6 +922,12 @@ function saveCacheUrl() {
   document.getElementById('cacheUrlStatus').style.color = 'var(--green)';
 }
 if (CACHE_URL) startPolling();
+// Place chat below briefing on initial tab
+(function(){
+  const chat=document.getElementById('chat-panel');
+  const aic=document.querySelector('.panel.active .aic');
+  if(chat&&aic) aic.insertAdjacentElement('afterend',chat);
+})();
 
 // ── CHAT ─────────────────────────────────────────────────────────────────────
 let chatHistory = [];

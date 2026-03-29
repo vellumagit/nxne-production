@@ -633,8 +633,12 @@ async function triggerAnalysis(type){
     const ct=res.headers.get('content-type')||'';
     let result='';
     if(ct.includes('application/json')){
-      const j=await res.json();
+      const raw=await res.text();
+      const safe=raw.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g,'').replace(/\n/g,'\\n').replace(/\r/g,'\\r');
+      let j;
+      try{ j=JSON.parse(safe); }catch(ex){ j={response:raw.replace(/<[^>]*>/g,'')}; }
       result=j.response||j.result||j.output||j.message||JSON.stringify(j);
+      result=result.replace(/\\n/g,'\n');
     }else{
       result=await res.text();
     }

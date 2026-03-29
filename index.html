@@ -195,6 +195,30 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-s
 .cursor{display:inline-block;width:2px;height:15px;background:var(--ink);margin-left:2px;animation:blink 1s infinite;vertical-align:middle}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── CHAT ── */
+.chat-wrap{background:var(--bg2);border:2px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:32px;position:relative}
+.chat-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--red),var(--amber),var(--green))}
+.chat-head{padding:22px 28px 18px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.chat-head-l .chat-title{font-family:'Lora',serif;font-weight:600;font-size:20px;color:var(--ink)}
+.chat-head-l .chat-sub{font-size:14px;color:var(--muted);margin-top:3px}
+.chat-msgs{height:340px;overflow-y:auto;padding:20px 28px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.chat-msgs:empty::before{content:'Ask anything about the festival — artists, venues, scheduling, stage managers, critical path...';color:var(--muted);font-style:italic;font-size:15px}
+.cmsg{max-width:78%;display:flex;flex-direction:column;gap:4px}
+.cmsg.user{align-self:flex-end;align-items:flex-end}
+.cmsg.assistant{align-self:flex-start;align-items:flex-start}
+.cmsg-bubble{padding:12px 16px;border-radius:14px;font-size:15px;line-height:1.65;color:var(--ink2)}
+.cmsg.user .cmsg-bubble{background:var(--ink);color:#fff;border-bottom-right-radius:4px}
+.cmsg.assistant .cmsg-bubble{background:var(--bg3);border:1.5px solid var(--border);border-bottom-left-radius:4px}
+.cmsg-time{font-size:12px;color:var(--muted);padding:0 4px}
+.chat-thinking .cmsg-bubble{color:var(--muted);font-style:italic}
+.chat-foot{padding:16px 28px;border-top:1.5px solid var(--border);display:flex;gap:10px;background:var(--bg2)}
+.chat-input{flex:1;font-family:'Inter',sans-serif;font-size:15px;padding:11px 16px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--ink);outline:none;transition:border-color .2s;resize:none;height:44px;line-height:1.4}
+.chat-input:focus{border-color:var(--border2)}
+.chat-send{font-family:'Inter',sans-serif;font-size:15px;font-weight:600;padding:11px 22px;background:var(--ink);color:#fff;border:none;border-radius:10px;cursor:pointer;transition:opacity .15s;white-space:nowrap;height:44px}
+.chat-send:hover{opacity:.84}
+.chat-send:disabled{opacity:.35;cursor:not-allowed}
+.chat-clear{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:11px 16px;background:transparent;color:var(--muted);border:1.5px solid var(--border);border-radius:10px;cursor:pointer;height:44px;transition:all .2s}
+.chat-clear:hover{color:var(--ink);border-color:var(--border2)}
 .hpill.live-on{background:var(--green-bg);border-color:var(--green-mid);color:var(--green)}
 #live-badge{transition:all .3s}
 .cache-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -449,6 +473,23 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-s
         <div class="tc scroll-x"><table class="dt"><thead><tr><th>Name</th><th>Venue</th><th>Acceptance</th><th>Volgistics</th><th>Contract</th><th>Headshot</th><th>Group Chat</th><th>Training 1</th><th>Training 2</th></tr></thead><tbody id="sm-body"></tbody></table></div>
       </div>
     </div>
+
+    <!-- CHAT -->
+    <div class="chat-wrap">
+      <div class="chat-head">
+        <div class="chat-head-l">
+          <div class="chat-title">Ask the Dashboard</div>
+          <div class="chat-sub">Ask anything about NXNE 2026 production - artists, venues, scheduling, stage managers, critical path</div>
+        </div>
+        <button class="chat-clear" onclick="clearChat()">Clear</button>
+      </div>
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-foot">
+        <input class="chat-input" id="chat-input" type="text" placeholder="e.g. Which venues still need artists? What's the biggest scheduling risk?" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
+        <button class="chat-send" id="chat-send" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
   </main>
 </div>
 <script>
@@ -858,6 +899,100 @@ function saveCacheUrl() {
   document.getElementById('cacheUrlStatus').style.color = 'var(--green)';
 }
 if (CACHE_URL) startPolling();
+
+// ── CHAT ─────────────────────────────────────────────────────────────────────
+let chatHistory = [];
+
+function buildChatSystem() {
+  const d = liveData || {};
+  const today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const days = Math.floor((new Date('2026-06-10') - new Date()) / 86400000);
+  return `You are a production advisor for NXNE 2026 (June 10-14, Toronto). Answer questions directly and concisely - 2-4 sentences unless the question needs more. Today is ${today}, ${days} days to festival. Live data: ${d.total_offers||0} artists offered, ${d.confirmed_artists||0} confirmed (${d.acceptance_rate||0}%), ${d.pending_artists||0} pending, ${d.declined_artists||0} declined. Critical path: ${d.completed_tasks||0}/${d.total_tasks||0} tasks complete, ${d.overdue_tasks||0} overdue. Venues: ${d.confirmed_venues||0}/${d.total_venues||0} confirmed, ${d.open_slots||0} open slots, ${d.fill_rate_pct||0}% fill rate. Stage managers: ${d.sm_total||0} assigned, ${d.contracts_signed||0} contracts signed, ${d.in_volgistics||0} in Volgistics. Diversity: ${d.diversity_poc||0} POC, ${d.diversity_lgbtq||0} LGBTQ2S+, ${d.diversity_disability||0} disability, ${d.diversity_indigenous||0} Indigenous. Plain text only, no markdown.`;
+}
+
+function renderChat() {
+  const el = document.getElementById('chat-msgs');
+  el.innerHTML = chatHistory.map(m => {
+    const time = m.time || '';
+    const bubble = m.content.replace(/\n/g,'<br>');
+    return `<div class="cmsg ${m.role}${m.thinking?' chat-thinking':''}">
+      <div class="cmsg-bubble">${bubble}</div>
+      ${time ? `<div class="cmsg-time">${time}</div>` : ''}
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearChat() {
+  chatHistory = [];
+  renderChat();
+  document.getElementById('chat-input').focus();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const send  = document.getElementById('chat-send');
+  const msg   = input.value.trim();
+  if (!msg || send.disabled) return;
+
+  input.value = '';
+  send.disabled = true;
+
+  const time = new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  chatHistory.push({ role:'user', content: msg, time });
+  chatHistory.push({ role:'assistant', content:'Thinking...', time:'', thinking:true });
+  renderChat();
+
+  try {
+    let result = '';
+
+    if (WEBHOOK_URL) {
+      // Build single-turn prompt with full history for Make.com
+      const system = buildChatSystem();
+      const history = chatHistory.slice(0,-1); // exclude the thinking placeholder
+      const convo = history.map(m => `${m.role==='user'?'User':'Assistant'}: ${m.content}`).join('\n\n');
+      const prompt = `${system}\n\nConversation so far:\n${convo}\n\nAssistant:`;
+
+      const res = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ type:'chat', prompt, source:'nxne-dashboard', timestamp:new Date().toISOString() })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const raw  = await res.text();
+        const safe = raw.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g,'').replace(/\n/g,'\\n').replace(/\r/g,'\\r');
+        let j;
+        try { j = JSON.parse(safe); } catch(ex) { j = { response: raw }; }
+        result = j.response || j.result || j.output || j.message || JSON.stringify(j);
+        result = result.replace(/\\n/g,'\n');
+      } else {
+        result = await res.text();
+      }
+    } else {
+      result = 'No webhook configured. Add your Make.com webhook URL in Setup to enable chat.';
+    }
+
+    // Replace thinking bubble with real response
+    chatHistory[chatHistory.length - 1] = {
+      role: 'assistant',
+      content: result.trim(),
+      time: new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})
+    };
+
+  } catch(e) {
+    chatHistory[chatHistory.length - 1] = {
+      role: 'assistant',
+      content: 'Error: ' + e.message,
+      time: new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})
+    };
+  }
+
+  renderChat();
+  send.disabled = false;
+  input.focus();
+}
 </script>
 </body>
 </html>

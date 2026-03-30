@@ -936,7 +936,35 @@ function buildChatSystem() {
   const d = liveData || {};
   const today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const days = Math.floor((new Date('2026-06-10') - new Date()) / 86400000);
-  return `You are a production advisor for NXNE 2026 (June 10-14, Toronto). Answer questions directly and concisely - 2-4 sentences unless the question needs more. Today is ${today}, ${days} days to festival. Live data: ${d.total_offers||0} artists offered, ${d.confirmed_artists||0} confirmed (${d.acceptance_rate||0}%), ${d.pending_artists||0} pending, ${d.declined_artists||0} declined. Critical path: ${d.completed_tasks||0}/${d.total_tasks||0} tasks complete, ${d.overdue_tasks||0} overdue. Venues: ${d.confirmed_venues||0}/${d.total_venues||0} confirmed, ${d.open_slots||0} open slots, ${d.fill_rate_pct||0}% fill rate. Stage managers: ${d.sm_total||0} assigned, ${d.contracts_signed||0} contracts signed, ${d.in_volgistics||0} in Volgistics. Diversity: ${d.diversity_poc||0} POC, ${d.diversity_lgbtq||0} LGBTQ2S+, ${d.diversity_disability||0} disability, ${d.diversity_indigenous||0} Indigenous. Plain text only, no markdown.`;
+
+  // SM-venue roster
+  let smList = '';
+  try {
+    const sms = JSON.parse(d.sm_assignments || '[]');
+    if (sms.length) {
+      smList = ' SM roster: ' + sms.map(s => `${s.name} (${s.venue||'unassigned'})`).join(', ') + '.';
+    }
+  } catch(e) {}
+
+  // Compact venue-artist schedule grouped by venue
+  let scheduleList = '';
+  try {
+    const slots = JSON.parse(d.artist_schedule || '[]');
+    if (slots.length) {
+      const byVenue = {};
+      slots.forEach(s => {
+        const v = s.venue || s.Venue || s.venue_name || 'Unknown';
+        const a = s.artist || s.Artist || s.artist_name || s.name || '';
+        if (v && a) {
+          if (!byVenue[v]) byVenue[v] = [];
+          byVenue[v].push(a);
+        }
+      });
+      scheduleList = ' Booked artists by venue: ' + Object.entries(byVenue).map(([v,artists]) => `${v}: ${artists.join(', ')}`).join('; ') + '.';
+    }
+  } catch(e) {}
+
+  return `You are a production advisor for NXNE 2026 (June 10-14, Toronto). Answer questions directly and concisely - 2-4 sentences unless the question needs more. Today is ${today}, ${days} days to festival. Live data: ${d.total_offers||0} artists offered, ${d.confirmed_artists||0} confirmed (${d.acceptance_rate||0}%), ${d.pending_artists||0} pending, ${d.declined_artists||0} declined. Critical path: ${d.completed_tasks||0}/${d.total_tasks||0} tasks complete, ${d.overdue_tasks||0} overdue. Venues: ${d.confirmed_venues||0}/${d.total_venues||0} confirmed, ${d.open_slots||0} open slots, ${d.fill_rate_pct||0}% fill rate. Stage managers: ${d.sm_total||0} assigned, ${d.contracts_signed||0} contracts signed, ${d.in_volgistics||0} in Volgistics.${smList}${scheduleList} Diversity: ${d.diversity_poc||0} POC, ${d.diversity_lgbtq||0} LGBTQ2S+, ${d.diversity_disability||0} disability, ${d.diversity_indigenous||0} Indigenous. Plain text only, no markdown.`;
 }
 
 function renderChat() {

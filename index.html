@@ -949,12 +949,13 @@ function buildChatSystem() {
   // Compact venue-artist schedule grouped by venue
   let scheduleList = '';
   try {
-    const slots = JSON.parse(d.artist_schedule || '[]');
+    const parsed = JSON.parse(d.artist_schedule || '[]');
+    const slots = Array.isArray(parsed) ? parsed : (parsed.artists || []);
     if (slots.length) {
       const byVenue = {};
       slots.forEach(s => {
         const v = s.venue || s.Venue || s.venue_name || 'Unknown';
-        const a = s.artist || s.Artist || s.artist_name || s.name || '';
+        const a = s.name || s.artist || s.Artist || s.artist_name || '';
         if (v && a) {
           if (!byVenue[v]) byVenue[v] = [];
           byVenue[v].push(a);

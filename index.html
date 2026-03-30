@@ -940,36 +940,66 @@ function buildChatSystem() {
   const d = liveData || {};
   const today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const days = Math.floor((new Date('2026-06-10') - new Date()) / 86400000);
+  const parse = key => { try { return JSON.parse(d[key] || '[]'); } catch(e) { return []; } };
 
-  // SM-venue roster
-  let smList = '';
-  try {
-    const sms = JSON.parse(d.sm_assignments || '[]');
-    if (sms.length) {
-      smList = ' SM roster: ' + sms.map(s => `${s.name} (${s.venue||'unassigned'})`).join(', ') + '.';
-    }
-  } catch(e) {}
+  // SM roster (name → venue)
+  const sms = parse('sm_assignments');
+  const smList = sms.length
+    ? ' SM roster: ' + sms.map(s => `${s.name} (${s.venue||'unassigned'})`).join(', ') + '.'
+    : '';
 
-  // Compact venue-artist schedule grouped by venue
+  // SM onboarding gaps
+  const smGaps = parse('sm_needs_action');
+  const smGapsList = smGaps.length
+    ? ' SM onboarding gaps: ' + smGaps.map(s => `${s.name} missing ${s.missing.join(', ')}`).join('; ') + '.'
+    : '';
+
+  // Artist schedule grouped by venue
   let scheduleList = '';
   try {
-    const parsed = JSON.parse(d.artist_schedule || '[]');
-    const slots = Array.isArray(parsed) ? parsed : (parsed.artists || []);
+    const raw = parse('artist_schedule');
+    const slots = Array.isArray(raw) ? raw : (raw.artists || []);
     if (slots.length) {
       const byVenue = {};
       slots.forEach(s => {
-        const v = s.venue || s.Venue || s.venue_name || 'Unknown';
-        const a = s.name || s.artist || s.Artist || s.artist_name || '';
-        if (v && a) {
-          if (!byVenue[v]) byVenue[v] = [];
-          byVenue[v].push(a);
-        }
+        const v = s.venue || 'Unknown', a = s.name || s.artist || '';
+        if (v && a) { if (!byVenue[v]) byVenue[v] = []; byVenue[v].push(a); }
       });
-      scheduleList = ' Booked artists by venue: ' + Object.entries(byVenue).map(([v,artists]) => `${v}: ${artists.join(', ')}`).join('; ') + '.';
+      scheduleList = ' Booked artists by venue: ' + Object.entries(byVenue).map(([v,a]) => `${v}: ${a.join(', ')}`).join('; ') + '.';
     }
   } catch(e) {}
 
-  return `You are a production advisor for NXNE 2026 (June 10-14, Toronto). Answer questions directly and concisely - 2-4 sentences unless the question needs more. Today is ${today}, ${days} days to festival. Live data: ${d.total_offers||0} artists offered, ${d.confirmed_artists||0} confirmed (${d.acceptance_rate||0}%), ${d.pending_artists||0} pending, ${d.declined_artists||0} declined. Critical path: ${d.completed_tasks||0}/${d.total_tasks||0} tasks complete, ${d.overdue_tasks||0} overdue. Venues: ${d.confirmed_venues||0}/${d.total_venues||0} confirmed, ${d.open_slots||0} open slots, ${d.fill_rate_pct||0}% fill rate. Stage managers: ${d.sm_total||0} assigned, ${d.contracts_signed||0} contracts signed, ${d.in_volgistics||0} in Volgistics.${smList}${scheduleList} Diversity: ${d.diversity_poc||0} POC, ${d.diversity_lgbtq||0} LGBTQ2S+, ${d.diversity_disability||0} disability, ${d.diversity_indigenous||0} Indigenous. Plain text only, no markdown.`;
+  // Artist offer status — confirmed are in schedule; surface pending + declined by name
+  let offersList = '';
+  const offers = parse('artist_offers');
+  if (offers.length) {
+    const pending  = offers.filter(o => o.status === 'pending').map(o => o.name);
+    const declined = offers.filter(o => o.status === 'declined').map(o => o.name);
+    if (pending.length)  offersList += ` Pending offers (${pending.length}): ${pending.join(', ')}.`;
+    if (declined.length) offersList += ` Declined offers (${declined.length}): ${declined.join(', ')}.`;
+  }
+
+  // Critical path detail
+  const overdueItems  = parse('overdue_detail');
+  const upcomingItems = parse('upcoming_tasks');
+  const recentItems   = parse('recently_done');
+  const overdueList  = overdueItems.length  ? ' Overdue tasks: '   + overdueItems.map(t  => `${t.task} (due ${t.deadline}${t.by?', '+t.by:''})`).join('; ') + '.' : '';
+  const upcomingList = upcomingItems.length ? ' Upcoming tasks: '  + upcomingItems.map(t => `${t.task} (due ${t.deadline}${t.by?', '+t.by:''})`).join('; ') + '.' : '';
+  const recentList   = recentItems.length   ? ' Recently done: '   + recentItems.map(t   => t.task).join(', ') + '.' : '';
+
+  // Venue filling status
+  const fillItems     = parse('needs_filling');
+  const outreachItems = parse('outreach_needed');
+  const fillList     = fillItems.length     ? ' Venues with open slots: ' + fillItems.map(v     => `${v.name} (${v.open} open)`).join(', ') + '.'     : '';
+  const outreachList = outreachItems.length ? ' Venues need outreach: '   + outreachItems.map(v => v.name).join(', ') + '.' : '';
+
+  return `You are a production advisor for NXNE 2026 (June 10-14, Toronto). Answer questions directly and concisely - 2-4 sentences unless the question needs more. Today is ${today}, ${days} days to festival.` +
+    ` Artists: ${d.total_offers||0} offered, ${d.confirmed_artists||0} confirmed (${d.acceptance_rate||0}%), ${d.pending_artists||0} pending, ${d.declined_artists||0} declined.${offersList}${scheduleList}` +
+    ` Critical path: ${d.completed_tasks||0}/${d.total_tasks||0} complete, ${d.overdue_tasks||0} overdue.${overdueList}${upcomingList}${recentList}` +
+    ` Venues: ${d.confirmed_venues||0}/${d.total_venues||0} confirmed, ${d.open_slots||0} open slots, ${d.fill_rate_pct||0}% fill rate.${fillList}${outreachList}` +
+    ` Stage managers: ${d.sm_total||0} assigned, ${d.contracts_signed||0} contracts signed, ${d.in_volgistics||0} in Volgistics.${smList}${smGapsList}` +
+    ` Diversity: ${d.diversity_poc||0} POC, ${d.diversity_lgbtq||0} LGBTQ2S+, ${d.diversity_disability||0} disability, ${d.diversity_indigenous||0} Indigenous.` +
+    ` Plain text only, no markdown.`;
 }
 
 function renderChat() {

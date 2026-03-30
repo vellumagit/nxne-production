@@ -979,8 +979,10 @@ async function sendChat() {
       // Build single-turn prompt with full history for Make.com
       const system = buildChatSystem();
       const history = chatHistory.slice(0,-1); // exclude the thinking placeholder
-      const convo = history.map(m => `${m.role==='user'?'User':'Assistant'}: ${m.content}`).join('\n\n');
-      const prompt = `${system}\n\nConversation so far:\n${convo}\n\nAssistant:`;
+      const convo = history.map(m => `${m.role==='user'?'User':'Assistant'}: ${m.content}`).join(' | ');
+      // Replace newlines with spaces — Make.com injects {{1.prompt}} raw into a JSON string,
+      // so literal newlines would break the JSON and cause a 400 from Anthropic.
+      const prompt = (`${system} Conversation so far: ${convo} Assistant:`).replace(/[\n\r]+/g, ' ').trim();
 
       const res = await fetch(WEBHOOK_URL, {
         method: 'POST',

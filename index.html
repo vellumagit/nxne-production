@@ -824,7 +824,11 @@ function gvizToMap(gviz) {
   rows.forEach(row => {
     if (!row.c || row.c.length < 2) return;
     const key = row.c[0] && row.c[0].v;
-    const val = row.c[1] && row.c[1].v;
+    // Column B (index 1) holds numbers; column C (index 2) holds text/JSON
+    // gviz types column B as "number" and drops string values — use column C as fallback
+    const valB = row.c[1] != null ? row.c[1].v : null;
+    const valC = row.c[2] != null ? row.c[2].v : null;
+    const val = valB != null ? valB : valC;
     if (key) map[key] = val;
   });
   return map;

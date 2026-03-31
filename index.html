@@ -811,7 +811,15 @@ buildCP(); buildVenues(); buildSM();
 //  LIVE DATA POLLING — reads from Google Sheets cache
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let CACHE_URL = 'https://velluma.co/dashboard-proxy.php';
-try { CACHE_URL = localStorage.getItem('nxne_cache_url') || CACHE_URL; } catch(e){}
+try {
+  const stored = localStorage.getItem('nxne_cache_url') || '';
+  // Auto-migrate from old direct gviz URL to proxy
+  if (stored && !stored.includes('docs.google.com') && !stored.includes('script.google.com')) {
+    CACHE_URL = stored;
+  } else if (stored.includes('docs.google.com') || stored.includes('script.google.com')) {
+    localStorage.setItem('nxne_cache_url', CACHE_URL);
+  }
+} catch(e){}
 let liveData = null;
 let pollInterval = null;
 function parseGvizJson(raw) {

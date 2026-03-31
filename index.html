@@ -810,8 +810,8 @@ buildCP(); buildVenues(); buildSM();
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  LIVE DATA POLLING — reads from Google Sheets cache
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-let CACHE_URL = '';
-try { CACHE_URL = localStorage.getItem('nxne_cache_url') || ''; } catch(e){}
+let CACHE_URL = 'https://velluma.co/dashboard-proxy.php';
+try { CACHE_URL = localStorage.getItem('nxne_cache_url') || CACHE_URL; } catch(e){}
 let liveData = null;
 let pollInterval = null;
 function parseGvizJson(raw) {

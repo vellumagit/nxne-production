@@ -616,8 +616,8 @@ function getPrompt(type){
   };
   return p[type]||'';
 }
-let WEBHOOK_URL = '';
-try { WEBHOOK_URL = localStorage.getItem('nxne_webhook') || ''; } catch(e){}
+let WEBHOOK_URL = 'https://hook.eu2.make.com/nk636djbxh6fxgrhi3tmiguk7kx77btx';
+try { WEBHOOK_URL = localStorage.getItem('nxne_webhook') || WEBHOOK_URL; } catch(e){}
 window.addEventListener('DOMContentLoaded', () => {
   if(WEBHOOK_URL){ document.getElementById('webhookUrl').value=WEBHOOK_URL; setWbSt('on'); }
   if(CACHE_URL){ 

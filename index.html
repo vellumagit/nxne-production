@@ -904,7 +904,7 @@ function rebuildVenueChips(venues) {
   container.innerHTML = venues.map(v => {
     const pct   = v.total ? Math.round(((v.total - v.open) / v.total) * 100) : 0;
     const color = pct >= 75 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
-    return `<div class="vchip"><div class="vdot" style="background:${color}"></div><span class="vcn">${v.name}</span><span class="vcs">${v.open}/${v.total}</span></div>`;
+    return `<div class="vchip"><div class="vdot" style="background:${color}"></div><span class="vcn">${v.name}</span><span class="vcs">${pct}%</span></div>`;
   }).join('');
 }
 function flash(el) {

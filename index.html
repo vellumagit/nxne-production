@@ -902,7 +902,7 @@ function rebuildVenueChips(venues) {
   const container = document.getElementById('venue-chips-live');
   if (!container) return;
   container.innerHTML = venues.map(v => {
-    const pct   = v.total ? Math.round(((v.total - v.open) / v.total) * 100) : 0;
+    const pct   = v.pct != null ? v.pct : (v.total ? Math.round(((v.total - v.open) / v.total) * 100) : 0);
     const color = pct >= 75 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
     return `<div class="vchip"><div class="vdot" style="background:${color}"></div><span class="vcn">${v.name}</span><span class="vcs">${pct}%</span></div>`;
   }).join('');
